@@ -40,6 +40,14 @@ public class ChatAutoSave {
   private long fast_delay;
   private static String fast_chatlog = null;
 
+  private static final String start_log =
+      "<!DOCTYPE html>\n<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"./styles.css\" />\n</head>\n<body>\n<div class=\"scroll-bottom\">\n";
+  // "<!DOCTYPE html>\n<html>\n<head>\n<meta http-equiv=\"refresh\" content=\"5\" />\n<link
+  // rel=\"stylesheet\" type=\"text/css\" href=\"./styles.css\" />\n<script
+  // type=\"text/javascript\">setTimeout(function(){ window.location.reload(); },
+  // 1000);</script>\n</head>\n<body>\n<div class=\"scroll-bottom\">\n";
+  private static final String end_log = "<a id=\"end\"></a>\n</div>\n</body>\n</html>";
+
   private ChatAutoSave() {
     log.debug("Creating chat log autosave timer"); // $NON-NLS-1$
     // Only way to set the delay is to call changeTimeout()
@@ -141,20 +149,21 @@ public class ChatAutoSave {
             // }
 
             if (MapTool.getPlayer().isGM() && MapTool.isHostingServer())
-              fast_chatlog = "chatlog_gm.txt";
+              fast_chatlog = "chatlog_gm.html";
             else {
-              fast_chatlog = "chatlog_player.txt";
+              fast_chatlog = "chatlog_player.html";
             }
 
             File chatFile =
                 new File(AppUtil.getAppHome("autosave").toString(), fast_chatlog); // $NON-NLS-1$
 
             CommandPanel chat = MapTool.getFrame().getCommandPanel();
-            String old = MapTool.getFrame().getStatusMessage();
+            // String old = MapTool.getFrame().getStatusMessage();
             try {
-              MapTool.getFrame()
-                  .setStatusMessage(
-                      I18N.getString("ChatAutoSave.status.chatAutosave")); // $NON-NLS-1$
+              // disable the status message saying its saving (every seconds)
+              // MapTool.getFrame()
+              //     .setStatusMessage(
+              //         I18N.getString("ChatAutoSave.status.chatAutosave")); // $NON-NLS-1$
               try (FileWriter writer = new FileWriter(chatFile)) {
                 String chatmsg = chat.getMessageHistory();
                 String find_regex = "(?:[ ]*)</?html>(?:[ \n]*)|";
@@ -162,14 +171,31 @@ public class ChatAutoSave {
                 find_regex += "(?:[ ]*)</?style(?:[ a-z0-9=\"/]*)>(?:[ \n]*)|";
                 find_regex += "(?:[ ]*)<!--(?:[.* a-zA-Z0-9-{:;}#\n]*)-->(?:[ \n]*)|";
                 find_regex += "(?:[ ]*)</?body(?:[ a-z0-9=\"/]*)>(?:[ \n]*)|";
-                find_regex += "(?:[ ]*)</?div>(?:[ \n]*)|";
                 find_regex += "(?:[ ]*)</?table(?:[ a-z0-9=\"]*)>(?:[ \n]*)|";
                 find_regex += "(?:[ ]*)</?tr>(?:[ \n]*)|";
                 find_regex += "(?:[ ]*)</?td(?:[ a-zA-Z0-9-\":;\"=]*)>(?:[ \n]*)|";
+                find_regex += "(?:[ ]*)</?div>(?:[ \n]*)";
                 find_regex += "(?:[ ]*)<img src=\"(?:[a-z0-9-:/]*)\">(?:[ \n]*)|";
-                // find_regex += "(?:[ \n]{2,99})";
+                find_regex += "(?:[\n]*)";
                 chatmsg = chatmsg.replaceAll(find_regex, "");
-                chatmsg = chatmsg.replaceAll("(?:[ \n]{2,99})", " ");
+
+                find_regex = "(?:[ ]{2,99})";
+                chatmsg = chatmsg.replaceAll(find_regex, " ");
+
+                find_regex = "</div>";
+                chatmsg = chatmsg.replaceAll(find_regex, "</div>\n");
+
+                // add html lines
+                // chatmsg = chatmsg.replaceAll("(</td>\n?)", "<br/>\n");
+                // chatmsg = chatmsg.replaceAll("(</span>\n)", "</span><br/>\n");
+
+                // trim lines old lines, so it only save to a certain limit
+                chatmsg = trimLines(chatmsg, 100);
+
+                // add basic html stuff
+                chatmsg = start_log + chatmsg + end_log;
+
+                // chatmsg = chatmsg.replaceAll("(?:[ \n]{2,99})", " ");
 
                 // chatmsg = "\nisGM: "+MapTool.getPlayer().isGM()+" | isHostingServer"+
                 // MapTool.isHostingServer() +" | isPersonalServer"+ MapTool.isPersonalServer()
@@ -184,7 +210,8 @@ public class ChatAutoSave {
               // message box that pops up...
               MapTool.showWarning("msg.warn.failedAutoSavingMessageHistory", e); // $NON-NLS-1$
             } finally {
-              MapTool.getFrame().setStatusMessage(old);
+              // disable the status message saying its saving (every seconds)
+              // MapTool.getFrame().setStatusMessage(old);
             }
           }
         };
@@ -205,5 +232,18 @@ public class ChatAutoSave {
       fast_countdown.schedule(
           fast_task, 1000, fast_delay); // Wait 5s, then save the log every 'delay' ms
     }
+  }
+
+  private static int countLines(String str) {
+    String[] lines = str.split("\r\n|\r|\n");
+    return lines.length;
+  }
+
+  private static String trimLines(String str, int max_lines) {
+    if (countLines(str) > 100) {
+      str = str.substring(str.indexOf('\n') + 1);
+      return trimLines(str, max_lines);
+    }
+    return str;
   }
 }
