@@ -42,10 +42,6 @@ public class ChatAutoSave {
 
   private static final String start_log =
       "<!DOCTYPE html>\n<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"./styles.css\" />\n</head>\n<body>\n<div class=\"scroll-bottom\">\n";
-  // "<!DOCTYPE html>\n<html>\n<head>\n<meta http-equiv=\"refresh\" content=\"5\" />\n<link
-  // rel=\"stylesheet\" type=\"text/css\" href=\"./styles.css\" />\n<script
-  // type=\"text/javascript\">setTimeout(function(){ window.location.reload(); },
-  // 1000);</script>\n</head>\n<body>\n<div class=\"scroll-bottom\">\n";
   private static final String end_log = "<a id=\"end\"></a>\n</div>\n</body>\n</html>";
 
   private ChatAutoSave() {
@@ -137,17 +133,6 @@ public class ChatAutoSave {
         new TimerTask() {
           @Override
           public void run() {
-            // if (fast_chatlog == null) {
-            //  String filename = "c"+AppPreferences.getChatFilenameFormat();
-            //  // FJE Ugly kludge to replace older default entry with newer default
-            //  // TODO This is going into 1.3.b77 so remove it in 3-4 builds
-            //  if ("cchatlog.html".equals(filename)) { // $NON-NLS-1$
-            //    AppPreferences.clearChatFilenameFormat();
-            //    filename = AppPreferences.getChatFilenameFormat();
-            //  }
-            //  fast_chatlog = String.format(filename, new Date()).replace(':', '-');
-            // }
-
             if (MapTool.getPlayer().isGM() && MapTool.isHostingServer())
               fast_chatlog = "chatlog_gm.html";
             else {
@@ -158,7 +143,6 @@ public class ChatAutoSave {
                 new File(AppUtil.getAppHome("autosave").toString(), fast_chatlog); // $NON-NLS-1$
 
             CommandPanel chat = MapTool.getFrame().getCommandPanel();
-            // String old = MapTool.getFrame().getStatusMessage();
             try {
               // disable the status message saying its saving (every seconds)
               // MapTool.getFrame()
@@ -185,21 +169,12 @@ public class ChatAutoSave {
                 find_regex = "</div>";
                 chatmsg = chatmsg.replaceAll(find_regex, "</div>\n");
 
-                // add html lines
-                // chatmsg = chatmsg.replaceAll("(</td>\n?)", "<br/>\n");
-                // chatmsg = chatmsg.replaceAll("(</span>\n)", "</span><br/>\n");
-
                 // trim lines old lines, so it only save to a certain limit
                 chatmsg = trimLines(chatmsg, 100);
 
                 // add basic html stuff
                 chatmsg = start_log + chatmsg + end_log;
 
-                // chatmsg = chatmsg.replaceAll("(?:[ \n]{2,99})", " ");
-
-                // chatmsg = "\nisGM: "+MapTool.getPlayer().isGM()+" | isHostingServer"+
-                // MapTool.isHostingServer() +" | isPersonalServer"+ MapTool.isPersonalServer()
-                // +"\n";
                 writer.write(chatmsg);
               }
             } catch (IOException e) {
@@ -230,7 +205,7 @@ public class ChatAutoSave {
       fast_stop();
       fast_task = fast_createTimer(fast_delay);
       fast_countdown.schedule(
-          fast_task, 1000, fast_delay); // Wait 5s, then save the log every 'delay' ms
+          fast_task, 1000, fast_delay); // Wait 1s, then save the log every 'delay' ms
     }
   }
 
