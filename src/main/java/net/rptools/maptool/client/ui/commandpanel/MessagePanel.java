@@ -61,6 +61,8 @@ public class MessagePanel extends JPanel {
   public static final Pattern URL_PATTERN =
       Pattern.compile("([^:]*)://([^/]*)/([^?]*)(?:\\?(.*))?");
 
+  private static final String ChatSavePath = System.getProperty("user.home") + "/.maptool-rptools/autosave";
+
   public MessagePanel() {
     setLayout(new GridLayout());
 
@@ -137,6 +139,14 @@ public class MessagePanel extends JPanel {
     clearMessages();
 
     SoundManager.registerSoundEvent(SND_MESSAGE_RECEIVED, SoundManager.getRegisteredSound("Clink"));
+
+
+    File chatFile = new File(ChatSavePath, "chat_data.txt");
+    try (FileWriter writer = new FileWriter(chatFile)) {
+      writer.write("");
+    } catch (IOException e) {
+      MapTool.showWarning("msg.warn.failedSaveWriteFromChatWindowInit", e);
+    }
   }
 
   public void refreshRenderer() {
@@ -184,8 +194,6 @@ public class MessagePanel extends JPanel {
    */
   private static Pattern roll_pattern =
       Pattern.compile("\036(?:\001([^\002]*)\002)?([^\036\037]*)(?:\037([^\036]*))?\036");
-
-  private static final String JsonSavePath = System.getProperty("user.home") + "/.maptool-rptools/autosave";
 
   public void addMessage(final TextMessage message) {
     EventQueue.invokeLater(
@@ -260,7 +268,7 @@ public class MessagePanel extends JPanel {
                 Element element = document.getElement("body");
                 document.insertBeforeEnd(element, "<div>" + output + "</div>");
 
-                File chatFile = new File(JsonSavePath, "chat_data.txt"); // $NON-NLS-1$
+                File chatFile = new File(ChatSavePath, "chat_data.txt");
                 try (FileWriter writer = new FileWriter(chatFile, true)) {
 
                   // set proper path for image
@@ -273,7 +281,7 @@ public class MessagePanel extends JPanel {
 
                   writer.write("<div class=\"chats\">" + output + "</div>\r\n");
                 } catch (IOException e) {
-                  MapTool.showWarning("msg.warn.failedSaveWriteFromChatWindow", e); // $NON-NLS-1$
+                  MapTool.showWarning("msg.warn.failedSaveWriteFromChatWindow", e);
                 }
 
                 if (!message.getSource().equals(MapTool.getPlayer().getName())) {
