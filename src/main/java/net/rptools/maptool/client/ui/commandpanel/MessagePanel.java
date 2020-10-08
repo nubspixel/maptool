@@ -44,6 +44,9 @@ import net.rptools.maptool.client.functions.MacroLinkFunction;
 import net.rptools.maptool.client.swing.MessagePanelEditorKit;
 import net.rptools.maptool.model.TextMessage;
 
+import java.io.File;
+import java.io.FileWriter;
+
 public class MessagePanel extends JPanel {
 
   private final JScrollPane scrollPane;
@@ -182,6 +185,8 @@ public class MessagePanel extends JPanel {
   private static Pattern roll_pattern =
       Pattern.compile("\036(?:\001([^\002]*)\002)?([^\036\037]*)(?:\037([^\036]*))?\036");
 
+  private static final String JsonSavePath = System.getProperty("user.home") + "/.maptool-rptools/autosave";
+
   public void addMessage(final TextMessage message) {
     EventQueue.invokeLater(
         new Runnable() {
@@ -254,6 +259,22 @@ public class MessagePanel extends JPanel {
               try {
                 Element element = document.getElement("body");
                 document.insertBeforeEnd(element, "<div>" + output + "</div>");
+
+                File chatFile = new File(JsonSavePath, "chat_data.txt"); // $NON-NLS-1$
+                try (FileWriter writer = new FileWriter(chatFile, true)) {
+
+                  // set proper path for image
+                  String find_regex = "<img src=\"asset://([a-z0-9:/]+)-([0-9]+)\"(?:[ ])>";
+                  output = output.replaceAll(find_regex, "<img src=\"../assetcache/$1\" width=\"$2\" />");
+
+                  // remove empty lines
+                  find_regex = "(?:[\\s]+\\r?\\n)";
+                  output = output.replaceAll(find_regex, "");
+
+                  writer.write("<div class=\"chats\">" + output + "</div>\r\n");
+                } catch (IOException e) {
+                  MapTool.showWarning("msg.warn.failedSaveWriteFromChatWindow", e); // $NON-NLS-1$
+                }
 
                 if (!message.getSource().equals(MapTool.getPlayer().getName())) {
                   MapTool.playSound(SND_MESSAGE_RECEIVED);
