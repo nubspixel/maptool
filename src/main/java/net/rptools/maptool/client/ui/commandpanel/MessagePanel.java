@@ -44,6 +44,11 @@ import net.rptools.maptool.client.swing.MessagePanelEditorKit;
 import net.rptools.maptool.model.TextMessage;
 import net.rptools.maptool.util.MessageUtil;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.util.Scanner;
+import java.util.ArrayList;
+
 public class MessagePanel extends JPanel {
 
   private final JScrollPane scrollPane;
@@ -57,6 +62,8 @@ public class MessagePanel extends JPanel {
 
   public static final Pattern URL_PATTERN =
       Pattern.compile("([^:]*)://([^/]*)/([^?]*)(?:\\?(.*))?");
+
+  private static final String ChatSavePath = System.getProperty("user.home") + "/.maptool-rptools/autosave";
 
   public MessagePanel() {
     setLayout(new GridLayout());
@@ -250,6 +257,56 @@ public class MessagePanel extends JPanel {
               } else {
                 document.insertBeforeEnd(element, output);
               }
+
+              String chatfilename = (! MapTool.getPlayer().isGM() ? "chat_data_player.txt" : "chat_data.txt");
+              File chatFile = new File(ChatSavePath, chatfilename);
+              try {
+                Scanner scanner = new Scanner(chatFile);
+                ArrayList<String> text_data = new ArrayList<String>();
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    text_data.add(line);
+                }
+                scanner.close();
+
+                // process new chat message
+                // set proper path for image
+                String find_regex = "<img src=(?:\"|\')asset://([a-z0-9:/]+)-([0-9]+)(?:\"|\')";
+                output = output.replaceAll(find_regex, "<img src=\"../assetcache/$1\" width=\"$2\"");
+
+                // set proper path for sized <image>
+                find_regex = "<image src=(?:\"|\')asset://([a-z0-9:/]+)(?:\"|\') width=(?:\"|\')([0-9]+)(?:\"|\')";
+                output = output.replaceAll(find_regex, "<image src=\"../assetcache/$1\" width=\"$2\"");
+
+                // set proper path for non-sized <image>
+                find_regex = "<image src=(?:\"|\')asset://([a-z0-9:/]+)(?:\"|\')";
+                output = output.replaceAll(find_regex, "<image src=\"../assetcache/$1\" width=\"10\"");
+
+                // remove empty spaces
+                find_regex = "(?:[ ]{4,99})";
+                output = output.replaceAll(find_regex, "");
+
+                // remove return carriage or new line
+                find_regex = "(?:\\r?\\n)";
+                output = output.replaceAll(find_regex, "");
+                String timestamp = Long.toString(System.currentTimeMillis());
+                text_data.add("<div class=\"chats\" data-ts=\""+timestamp+"\">" + output + "</div>");
+
+                while(text_data.size() > 100) {
+                  text_data.remove(0);
+                }
+
+                try (FileWriter writer = new FileWriter(chatFile)) {
+                  for (String line : text_data) {
+                      writer.write(line+System.getProperty( "line.separator" ));
+                  }
+                } catch (IOException e) {
+                  MapTool.showWarning("msg.warn.failedSaveWriteFromChatWindow", e);
+                }
+              } catch (IOException e) {
+                MapTool.showWarning("msg.warn.failToReadChatData", e);
+              }
+
               if (!message.getSource().equals(MapTool.getPlayer().getName())) {
                 MapTool.playSound(SND_MESSAGE_RECEIVED);
               }

@@ -157,7 +157,7 @@ runtime {
         jvmArgs = ["-Xss8M", "-Dsentry.environment=Production", "-Dfile.encoding=UTF-8", "-DMAPTOOL_DATADIR=.maptool-" + vendor.toLowerCase(), "-XX:+ShowCodeDetailsInExceptionMessages",  "--add-opens=javafx.web/javafx.scene.web=ALL-UNNAMED", "--add-opens=javafx.web/com.sun.webkit=ALL-UNNAMED"]
 
         imageOptions = []
-        imageName = project.name + developerRelease
+        imageName = project.name
         installerName = project.name
         installerOptions = [
                 //'--temp', 'releases/temp-files',
